@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PI + YPI Competency Framework Navigator</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=DM+Serif+Text&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Instrument Sans', 'Open Sans', system-ui, sans-serif; background: #F7F0EC; color: #1a1a1a; line-height: 1.6; }
+
+/* ── Header ── */
+.header { background: #004B5C; color: #fff; padding: 28px 24px 20px; text-align: center; }
+.header h1 { font-family: 'DM Serif Text', serif; font-size: 1.6rem; font-weight: 400; margin-bottom: 4px; letter-spacing: 0.3px; }
+.header p { font-size: 0.82rem; opacity: 0.75; font-weight: 400; }
+
+/* ── Controls ── */
+.controls { background: #fff; border-bottom: 2px solid #004B5C; padding: 20px 24px; display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; align-items: end; }
+.control-group { display: flex; flex-direction: column; gap: 6px; }
+.control-group label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #004B5C; }
+select { padding: 10px 36px 10px 14px; border: 1.5px solid #c4ccc8; border-radius: 8px; font-size: 0.95rem; font-family: inherit; background: #fff; color: #1a1a1a; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23004B5C' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; min-width: 200px; }
+select:focus { outline: none; border-color: #004B5C; box-shadow: 0 0 0 3px rgba(0,75,92,0.12); }
+
+/* ── Container ── */
+.container { max-width: 880px; margin: 0 auto; padding: 24px 16px 60px; }
+
+/* ── Gap Dashboard ── */
+.dashboard { background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; display: none; }
+.dashboard.active { display: block; }
+.dash-title { font-family: 'DM Serif Text', serif; font-size: 1.05rem; color: #004B5C; margin-bottom: 14px; }
+.dash-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.dash-stat { text-align: center; padding: 10px 16px; border-radius: 10px; min-width: 80px; }
+.dash-stat .num { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+.dash-stat .lbl { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; font-weight: 600; }
+.stat-met { background: #e6f4ea; } .stat-met .num { color: #1a7a3a; } .stat-met .lbl { color: #1a7a3a; }
+.stat-below { background: #fef3e2; } .stat-below .num { color: #946b1a; } .stat-below .lbl { color: #946b1a; }
+.stat-far { background: #fde8e8; } .stat-far .num { color: #a82828; } .stat-far .lbl { color: #a82828; }
+.stat-unscored { background: #f0f0f0; } .stat-unscored .num { color: #777; } .stat-unscored .lbl { color: #777; }
+.progress-track { background: #eee; border-radius: 8px; height: 10px; overflow: hidden; margin-bottom: 10px; }
+.progress-fill { height: 100%; border-radius: 8px; transition: width 0.4s ease; background: linear-gradient(90deg, #004B5C, #1a8a5a); }
+.dash-hint { font-size: 0.78rem; color: #777; }
+.dash-priorities { margin-top: 14px; padding-top: 14px; border-top: 1px solid #eee; }
+.dash-priorities h4 { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #730A2D; margin-bottom: 8px; }
+.priority-item { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; padding: 6px 0; }
+.priority-gap { font-weight: 700; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; background: #fef3e2; color: #946b1a; }
+.priority-gap.gap-2 { background: #fde8e8; color: #a82828; }
+
+/* ── Summary Bar ── */
+.summary-bar { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 16px 20px; margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+.summary-bar .badge { background: #004B5C; color: #fff; font-size: 0.75rem; font-weight: 600; padding: 4px 14px; border-radius: 20px; }
+.summary-bar .info { font-size: 0.85rem; color: #666; }
+
+/* ── Mode toggle & actions ── */
+.action-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+.btn { padding: 8px 18px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; font-family: inherit; cursor: pointer; border: none; transition: all 0.15s; }
+.btn-primary { background: #004B5C; color: #fff; }
+.btn-primary:hover { background: #003d4d; }
+.btn-primary.active { background: #730A2D; color: #fff; }
+.btn-secondary { background: #fff; color: #004B5C; border: 1.5px solid #004B5C; }
+.btn-secondary:hover { background: #004B5C; color: #fff; }
+.btn-accent { background: #FFB432; color: #1a1a1a; }
+.btn-accent:hover { background: #e6a02d; }
+.next-level-info { font-size: 0.82rem; color: #730A2D; padding: 10px 16px; background: #fdf2f5; border: 1px solid #e8c0cc; border-radius: 8px; margin-bottom: 16px; display: none; }
+
+/* ── Section labels ── */
+.section-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #999; margin: 28px 0 12px; padding-left: 4px; }
+
+/* ── Competency cards ── */
+.comp-card { background: #fff; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 10px; overflow: hidden; transition: box-shadow 0.15s; }
+.comp-card:hover { box-shadow: 0 2px 10px rgba(0,75,92,0.08); }
+.comp-card.gap-highlight { border-left: 4px solid #F06437; }
+.comp-head { padding: 16px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; user-select: none; }
+.comp-head:hover { background: #faf8f6; }
+.comp-code { font-size: 0.73rem; font-weight: 700; color: #999; min-width: 42px; }
+.comp-name { font-weight: 600; font-size: 0.95rem; flex: 1; }
+.comp-min { font-size: 0.75rem; padding: 3px 10px; border-radius: 14px; font-weight: 600; white-space: nowrap; }
+.min-0 { background: #fef3e2; color: #946b1a; }
+.min-1 { background: #e6f4ea; color: #1a7a3a; }
+.min-2 { background: #dce8f8; color: #1a4d8a; }
+.min-3 { background: #f3e8f3; color: #6b1a6b; }
+.min-na { background: #f0f0f0; color: #888; }
+.chevron { width: 18px; height: 18px; transition: transform 0.2s; flex-shrink: 0; }
+.chevron svg { display: block; }
+.comp-card.open .chevron { transform: rotate(180deg); }
+.comp-body { display: none; border-top: 1px solid #eee; padding: 0 20px 20px; }
+.comp-card.open .comp-body { display: block; }
+.comp-def { font-style: italic; color: #555; margin: 16px 0; font-size: 0.9rem; padding: 12px 16px; background: #f8f6f4; border-left: 3px solid #004B5C; border-radius: 0 6px 6px 0; }
+
+/* ── Self-assessment scoring ── */
+.self-score-row { display: flex; align-items: center; gap: 10px; margin: 12px 0 4px; padding: 10px 14px; background: #faf8f6; border-radius: 8px; flex-wrap: wrap; }
+.self-score-row .label { font-size: 0.78rem; font-weight: 600; color: #004B5C; }
+.score-btns { display: flex; gap: 4px; }
+.score-btn { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #ddd; background: #fff; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+.score-btn:hover { border-color: #004B5C; background: #e8f4f7; }
+.score-btn.selected { background: #004B5C; color: #fff; border-color: #004B5C; }
+.score-btn.clear-btn { font-size: 0.65rem; color: #999; width: auto; border-radius: 14px; padding: 0 10px; height: 30px; }
+.score-btn.clear-btn:hover { color: #730A2D; border-color: #730A2D; }
+.gap-indicator { font-size: 0.75rem; font-weight: 600; padding: 3px 10px; border-radius: 14px; margin-left: auto; }
+.gap-at { background: #e6f4ea; color: #1a7a3a; }
+.gap-above { background: #dce8f8; color: #1a4d8a; }
+.gap-below-1 { background: #fef3e2; color: #946b1a; }
+.gap-below-2 { background: #fde8e8; color: #a82828; }
+
+/* ── Supervisor score row ── */
+.sup-score-row { display: flex; align-items: center; gap: 10px; margin: 4px 0; padding: 10px 14px; background: #f5eef5; border-radius: 8px; flex-wrap: wrap; }
+.sup-score-row .label { font-size: 0.78rem; font-weight: 600; color: #730A2D; }
+.score-btn.sup-selected { background: #730A2D; color: #fff; border-color: #730A2D; }
+.score-btn.sup-btn:hover { border-color: #730A2D; background: #f8e8f0; }
+
+/* ── Level sections ── */
+.level-section { margin-top: 16px; }
+.level-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; cursor: pointer; user-select: none; padding: 8px 12px; border-radius: 8px; }
+.level-header:hover { background: #f5f3f0; }
+.level-badge { font-size: 0.73rem; font-weight: 700; padding: 2px 10px; border-radius: 12px; }
+.level-title { font-weight: 600; font-size: 0.88rem; flex: 1; }
+.level-tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.tag-target { background: #004B5C; color: #fff; }
+.tag-above { background: #f3e8f3; color: #6b1a6b; }
+.tag-below { background: #f0f0f0; color: #888; }
+.tag-current { background: #FFB432; color: #1a1a1a; }
+.tag-supervisor { background: #730A2D; color: #fff; }
+.level-examples { padding: 4px 12px 4px 34px; font-size: 0.85rem; color: #555; }
+.level-examples .guidance { font-weight: 600; margin-bottom: 6px; }
+.level-examples ul { padding-left: 18px; margin: 6px 0 0; }
+.level-examples li { margin-bottom: 5px; }
+.level-section.collapsed .level-examples { display: none; }
+.level-section.target .level-header { background: #e0eff3; border: 1.5px solid #80b8c8; }
+.level-section.target .level-examples { display: block; }
+.level-section.current-score .level-header { background: #fff8e6; border: 1.5px solid #FFB432; }
+.level-section.sup-score .level-header { background: #f5eef5; border: 1.5px solid #c080b0; }
+
+/* ── Misc ── */
+.empty-state { text-align: center; padding: 60px 20px; color: #999; }
+.empty-state p { font-size: 1.1rem; }
+.rating-ref { margin-top: 8px; }
+.rating-ref summary { font-size: 0.82rem; color: #666; cursor: pointer; padding: 8px 0; }
+.rating-ref .scale { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 0; }
+.rating-ref .scale span { font-size: 0.78rem; padding: 4px 10px; border-radius: 14px; background: #faf8f6; border: 1px solid #ddd; }
+.integrity-note { font-size: 0.78rem; color: #946b1a; background: #fef8ee; border: 1px solid #f0ddb8; border-radius: 8px; padding: 10px 14px; margin-top: 8px; }
+
+/* ── Staff name input ── */
+.name-input { padding: 10px 14px; border: 1.5px solid #c4ccc8; border-radius: 8px; font-size: 0.95rem; font-family: inherit; background: #fff; color: #1a1a1a; min-width: 200px; }
+.name-input:focus { outline: none; border-color: #004B5C; box-shadow: 0 0 0 3px rgba(0,75,92,0.12); }
+.name-input::placeholder { color: #aaa; }
+
+/* ── Search box ── */
+.search-box { position: relative; margin-bottom: 16px; }
+.search-input { width: 100%; padding: 10px 14px 10px 38px; border: 1.5px solid #c4ccc8; border-radius: 8px; font-size: 0.9rem; font-family: inherit; background: #fff; color: #1a1a1a; }
+.search-input:focus { outline: none; border-color: #004B5C; box-shadow: 0 0 0 3px rgba(0,75,92,0.12); }
+.search-input::placeholder { color: #aaa; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none; }
+.comp-card.search-hidden { display: none; }
+
+/* ── Snapshot & persistence bar ── */
+.persist-bar { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 14px 20px; margin-bottom: 12px; }
+.persist-bar .persist-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #004B5C; margin-bottom: 10px; }
+.persist-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.persist-row .btn { font-size: 0.78rem; padding: 6px 14px; }
+.snapshot-list { margin-top: 10px; }
+.snapshot-item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 6px; font-size: 0.82rem; }
+.snapshot-item:hover { background: #faf8f6; }
+.snapshot-item .snap-name { flex: 1; font-weight: 600; }
+.snapshot-item .snap-date { color: #888; font-size: 0.75rem; }
+.snapshot-item .snap-btn { font-size: 0.72rem; padding: 3px 10px; border-radius: 6px; cursor: pointer; border: 1px solid #ddd; background: #fff; font-family: inherit; font-weight: 600; }
+.snapshot-item .snap-btn:hover { background: #e8f4f7; border-color: #004B5C; }
+.snapshot-item .snap-btn.snap-del { color: #a82828; }
+.snapshot-item .snap-btn.snap-del:hover { background: #fde8e8; border-color: #a82828; }
+.save-status { font-size: 0.72rem; color: #1a7a3a; margin-left: 8px; opacity: 0; transition: opacity 0.3s; }
+.save-status.show { opacity: 1; }
+
+/* ── Radar chart ── */
+.radar-wrap { background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; }
+.radar-title { font-family: 'DM Serif Text', serif; font-size: 1.05rem; color: #004B5C; margin-bottom: 10px; }
+.radar-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; font-size: 0.78rem; }
+.radar-legend span { display: flex; align-items: center; gap: 5px; }
+.radar-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* ── Manager panel ── */
+.manager-panel { background: #f9f4f9; border: 1.5px solid #d4a0c0; border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+.manager-panel .mgr-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #730A2D; margin-bottom: 10px; }
+.manager-panel .mgr-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.manager-panel .btn { font-size: 0.78rem; padding: 6px 14px; }
+.mgr-import-area { margin-top: 10px; }
+.mgr-import-area textarea { width: 100%; height: 80px; border: 1.5px solid #d4a0c0; border-radius: 8px; font-family: monospace; font-size: 0.78rem; padding: 8px; resize: vertical; }
+
+/* ── Print overlay ── */
+.print-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: start; padding: 40px 20px; overflow-y: auto; }
+.print-overlay.active { display: flex; }
+.print-content { background: #fff; max-width: 700px; width: 100%; border-radius: 12px; padding: 40px; position: relative; }
+.print-close { position: absolute; top: 12px; right: 16px; font-size: 1.2rem; cursor: pointer; background: none; border: none; color: #999; font-family: inherit; }
+.print-close:hover { color: #333; }
+.print-content h2 { font-family: 'DM Serif Text', serif; color: #004B5C; font-size: 1.3rem; margin-bottom: 4px; }
+.print-content .subtitle { color: #666; font-size: 0.85rem; margin-bottom: 20px; }
+.print-section { margin-bottom: 20px; }
+.print-section h3 { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #004B5C; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #004B5C; }
+.print-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.print-table th { text-align: left; padding: 8px 10px; background: #f8f6f4; font-weight: 600; border-bottom: 1px solid #ddd; }
+.print-table td { padding: 8px 10px; border-bottom: 1px solid #eee; }
+.print-table .gap-cell { font-weight: 700; }
+.print-table .gap-pos { color: #1a7a3a; }
+.print-table .gap-zero { color: #666; }
+.print-table .gap-neg { color: #a82828; }
+.print-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+@media print {
+  body * { visibility: hidden; }
+  .print-overlay, .print-overlay * { visibility: visible; }
+  .print-overlay { position: absolute; background: #fff; padding: 0; }
+  .print-close, .print-actions { display: none !important; }
+}
+
+@media (max-width: 600px) {
+  .controls { flex-direction: column; align-items: stretch; }
+  select, .name-input { min-width: auto; width: 100%; }
+  .comp-head { padding: 14px 14px; gap: 10px; }
+  .comp-body { padding: 0 14px 16px; }
+  .dash-stats { gap: 8px; }
+  .dash-stat { min-width: 60px; padding: 8px 10px; }
+  .action-row { gap: 6px; }
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>PI + YPI Competency Framework Navigator</h1>
+  <p>Version 3.0 — February 2026 — Yayasan Planet Indonesia</p>
+</div>
+
+<div class="controls">
+  <div class="control-group">
+    <label>Your Role Area</label>
+    <select id="area">
+      <option value="">— Select —</option>
+      <option value="program">Program</option>
+      <option value="technical">Technical</option>
+      <option value="development">Development</option>
+      <option value="comms">Communications</option>
+      <option value="ops">Operations</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label>Your Level</label>
+    <select id="level">
+      <option value="">— Select —</option>
+      <option value="junior">Junior Officer</option>
+      <option value="officer">Officer</option>
+      <option value="senior">Senior</option>
+      <option value="director">Director</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label>Your Name</label>
+    <input type="text" id="staffName" class="name-input" placeholder="e.g. Sari Rahayu">
+  </div>
+</div>
+<div class="container" id="app">
+  <div class="empty-state"><p>Select your role area and level above to see your competency profile.</p></div>
+</div>
+
+<!-- Print overlay -->
+<div class="print-overlay" id="printOverlay">
+  <div class="print-content" id="printContent"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════
+const COMPS = {
+  'B.1.1': {name: 'Effective Communication', def: 'The ability to convey messages clearly, accurately, and effectively to diverse audiences — through both listening and expression — in ways that create mutual understanding and minimize misinterpretation.', hasNeg: false, levels: {'0': {g: 'Has difficulty conveying ideas clearly or struggles to use language appropriate to the audience.', ex: ['Delivers information using language that does not match the audience\'s level of understanding (too technical or too simple), creating confusion.', 'Does not adapt communication style when the audience clearly does not understand, cannot clearly convey PI\'s core model & TOC']}, '1': {g: 'Can convey simple information clearly but adapts communication style inconsistently.', ex: ['Speaks clearly on familiar topics but uses overly technical language when addressing non-technical audiences.', 'Prepares written reports but uses language that is too complex or too simple for the intended reader, with limited ability to explain PI\'s core model, TOC or core values']}, '2': {g: 'Consistently delivers clear, appropriate messages to diverse audiences and uses feedback to confirm understanding.', ex: ['Presents field findings to donors, community members, and technical teams using different levels of detail and terminology, but cannot always explain clearly or simplify', 'Adjusts communication approach in response to audience cues — for example, can pitch PI through climate lens or Data Justice or Community health', 'Requests feedback to confirm understanding after delivering a key message.']}, '3': {g: 'Serves as a communication role model and builds organizational systems for clear, consistent information flow.', ex: ['Coaches colleagues on communication skills during performance reviews or one-on-one sessions.', 'Represents YPI to external audiences — government, donors, media — in a manner that reflects and strengthens the organization\'s credibility, is seen as a leader in the space in external and internal communications']}}},
+  'B.1.2': {name: 'Collaboration', def: 'The ability to work effectively with others toward a shared goal, valuing diverse perspectives, roles, and contributions — whether within a team or across teams and organizations.', hasNeg: false, levels: {'0': {g: 'Tends to work independently and avoids coordinating with others even when collaboration is required.', ex: ['Completes tasks without informing or involving relevant colleagues, leading to duplication or misalignment.', 'Resists input from others and prefers to solve problems alone.']}, '1': {g: 'Willing to work with others when required and contributes to team efforts in a basic way.', ex: ['Attends team meetings and completes assigned tasks on time.', 'Shares relevant information with colleagues when asked.', 'Communicates constructively with direct team members on channels such as Slack and email']}, '2': {g: 'Actively contributes to team goals, builds working relationships across functions, and navigates differences constructively.', ex: ['Proactively shares information that could benefit other team members, without being asked.', 'Works constructively with colleagues from different units or disciplines.', 'Raises disagreements openly and seeks resolution without unnecessary friction.']}, '3': {g: 'Builds and sustains collaborative systems across teams, organizations, and partners.', ex: ['Establishes coordination mechanisms across units or partner organizations', 'Facilitates cross-team problem-solving when disagreements or gaps arise.', 'Mentors others in collaborative skills and models constructive behavior during conflicts.']}}},
+  'B.1.3': {name: 'Adaptability', def: 'The ability to remain effective and maintain a constructive attitude in the face of changing circumstances, unexpected obstacles, or new information.', hasNeg: false, levels: {'0': {g: 'Resists or avoids change; shows rigidity when circumstances shift.', ex: ['Continues using an approach that is no longer working rather than adjusting.', 'Becomes visibly stressed or resistant when work plans are modified.']}, '1': {g: 'Accepts change when directed and adjusts behavior with guidance.', ex: ['Follows new procedures or priorities when informed by a supervisor.', 'Asks questions to understand what has changed and what is expected.']}, '2': {g: 'Proactively adjusts to change and helps team members navigate uncertainty.', ex: ['Revises workplans and deliverables in response to shifting priorities without prompting', 'Can lead a scrum or agile working group effectively', 'Maintains team morale during disruptions by staying calm and constructive']}, '3': {g: 'Anticipates change, leads adaptive responses, and builds organizational resilience.', ex: ['Identifies emerging risks or operating environment shifts and adjusts strategy proactively, making strong recommendations to the organization about sectoral risks, political shifts, or changes in funding landscape', 'Designs flexible systems and processes that enable the organization to respond effectively under uncertainty - can lead to developing adaptation systems', 'Supports others in developing their own capacity to adapt.']}}},
+  'B.1.4': {name: 'Evidence-Based Approach', def: 'The practice of grounding decisions, program design, and assessments in verifiable data and rigorous evidence — rather than assumption, intuition, or anecdote.', hasNeg: false, levels: {'0': {g: 'Makes decisions primarily based on habit, preference, or assumption without seeking relevant evidence.', ex: ['Repeats previous approaches without checking whether they produced the desired outcomes.', 'Does not reference data when explaining program choices, or is unable to interpret data or analyze data']}, '1': {g: 'Recognizes the importance of evidence and uses available data when prompted.', ex: ['References baseline data or field observations when making recommendations.', 'Asks for supporting data when presented with claims or proposals.', 'Relies on others for data interpretation or critique']}, '2': {g: 'Consistently seeks and applies evidence in decision-making and communicates findings clearly.', ex: ['Can contribute to complex analysis or analysis design to inform decision making', 'Uses data to make decisions and / or support decision making', 'Presents findings with appropriate context — sample size, limitations, confidence level.', 'Distinguishes between correlation and causation when interpreting results.']}, '3': {g: 'Builds organizational evidence systems and champions a culture of evidence-based practice.', ex: ['Applies evidence-based critical thinking, referencing data as a way to inform decisions at the organizational - level and team-level', 'Mentors staff in data interpretation and evidence-based communication.', 'Can lead, when required, complex analysis or analysis design', 'Communicates complex evidence to non-technical audiences — donors, government partners — in compelling, accessible ways.']}}},
+  'B.1.5': {name: 'Process Orientation', def: 'The ability to follow, respect, and contribute to organizational processes, policies, and workflows in ways that ensure efficiency, quality, and compliance.', hasNeg: false, levels: {'0': {g: 'Frequently bypasses or ignores established processes and procedures.', ex: ['Submits reports or financial documents outside the required format or timeline.', 'Does not follow procurement procedures, creating compliance risks for the organization.', 'Does not establish their own workflow and is highly dependent on others for prioritizing tasks']}, '1': {g: 'Understands and follows standard operating procedures consistently.', ex: ['Meets deadlines', 'Can design on work flow with support', 'Asks for clarification when unsure about the correct procedure.']}, '2': {g: 'Monitors process adherence within their scope and identifies opportunities for improvement.', ex: ['Can manage own workflow plus others', 'Flags process gaps or inefficiencies to supervisors and proposes practical solutions.', 'Trains new staff on relevant procedures and quality standards.']}, '3': {g: 'Leads process improvement initiatives and builds systems for organizational quality assurance.', ex: ['Can manage multiple workflows and teams effectively', 'Design quality assurance mechanisms — checklists, peer review protocols.', 'Leads organizational process reviews that result in measurable improvement.']}}},
+  'B.1.6': {name: 'Organizational Commitment', def: 'Alignment between personal values and organizational mission; a genuine sense of ownership and loyalty to YPI\'s goals, culture, and long-term impact.', hasNeg: false, levels: {'0': {g: 'Shows low engagement or indifference to organizational values and goals.', ex: ['Does not participate actively in organizational events or initiatives beyond assigned tasks.', 'Speaks negatively about the organization to colleagues or external stakeholders.']}, '1': {g: 'Understands and respects the organizational mission; behaves consistently with stated values.', ex: ['Attends organizational meetings and participates constructively.', 'Speaks positively about work in community and partner settings.']}, '2': {g: 'Goes beyond assigned duties to contribute to organizational culture and goal achievement.', ex: ['Completes cross-cutting tasks or organizational improvement efforts.', 'Actively promotes values in team interactions and public-facing settings.', 'Represents the organization\'s mission credibly when engaging stakeholders.']}, '3': {g: 'Serves as an organizational champion who models commitment and actively inspires it in others.', ex: ['Initiates culture-building activities — values workshops, staff recognition programs.', 'Makes decisions that prioritize long-term organizational integrity over short-term convenience.', 'Mentors others in understanding and embodying mission and values.', 'Seen as a leader in the wider space, beyond PI, on community-first values and principles']}}},
+  'B.2.1': {name: 'Strategy Implementation', def: 'The ability to translate organizational strategy into concrete programs and operational plans; ensuring that YPI\'s vision, strategies, and objectives are effectively realized at every level of the organization.', hasNeg: false, levels: {'0': {g: 'Has difficulty connecting day-to-day tasks to the broader organizational strategy.', ex: ['Cannot articulate how their work relates to YPI\'s strategic priorities.', 'Operates in isolation from the organizational planning cycle.']}, '1': {g: 'Understands the organizational strategy and links their work to strategic objectives.', ex: ['Describes how their activities contribute to YPI\'s annual priorities. strategy.', 'Aligns workplans with the organizational strategy document.']}, '2': {g: 'Translates strategy into operational plans and ensures alignment at the team level.', ex: ['Develops divisional workplans based on the organizational strategy.', 'Monitors whether team activities are on track with strategic objectives.', 'Can evaluate self and other direct reports effectively and objectively', 'Communicates strategic priorities to team members clearly and consistently.']}, '3': {g: 'Leads organizational strategy processes and builds institutional capacity for implementation across the organization.', ex: ['Facilitates annual or multi-year planning processes that align all units to common priorities.', 'Identifies misalignments between operations and strategy and leads corrective action.', 'Designs organizational learning systems to inform future strategy revision and adaptation.']}}},
+  'B.2.10': {name: 'Creativity', def: 'The ability to generate novel, effective ideas and approaches — going beyond routine solutions to find new ways to address challenges or improve program outcomes.', hasNeg: false, levels: {'0': {g: 'Relies exclusively on existing approaches and does not generate or encourage new ideas.', ex: ['Repeats established methods even when they are no longer effective.', 'Dismisses or ignores novel ideas from others.']}, '1': {g: 'Generates new ideas within their scope of work.', ex: ['Suggests a different or improved approach to a routine task.', 'Shares creative ideas in team discussions or planning sessions.']}, '2': {g: 'Applies creative thinking to solve complex problems and improve team processes.', ex: ['Develops innovative solutions to operational challenges.', 'Iterates on approaches based on learning, feedback, and evidence.', 'Encourages creative problem-solving within their team.']}, '3': {g: 'Drives organizational innovation and creates institutional space for learning and structured experimentation.', ex: ['Launches innovation competitions or cross-team learning initiatives.', 'Integrates lessons from one program or region into organization-wide improvements.', 'Builds institutional infrastructure for experimentation, iteration, and evidence-based adaptation.']}}},
+  'B.2.11': {name: 'Integrity', def: 'Consistently acting in accordance with ethical principles, YPI\'s core values, and universal norms — including being honest, transparent, accountable for one\'s actions, and committed to fairness and justice in all contexts.', hasNeg: true, levels: {'-1': {g: 'Demonstrates dishonest or unethical behavior that violates organizational principles.', ex: ['Engages in dishonest acts that harm the organization, its staff, or its beneficiaries.', 'Leaks confidential organizational information without authorization.', 'Deliberately disregards agreed principles or codes of conduct.', 'Manipulates data, records, or reporting.']}, '0': {g: 'Shows awareness of organizational values but does not consistently demonstrate or apply them.', ex: ['Shows trust selectively — only to certain individuals.', 'Known for inconsistency between stated positions and actual behavior.', 'Follows decisions without considering their ethical implications.', 'Does not report potentially problematic practices.', 'Reports findings factually even when results are poor.']}, '1': {g: 'Consistently demonstrates YPI\'s core values and universal norms in interactions with all colleagues and stakeholders.', ex: ['Uses YPI\'s core values as the basis for behavior both within the organization and when representing YPI externally.', 'Follows organizational rules and policies consistently.', 'Maintains alignment between words and actions.', 'Maintains the trust of partners and program beneficiaries.']}, '2': {g: 'Consistently acts in accordance with YPI\'s core values and universal norms, regardless of the status of the individuals involved.', ex: ['Identifies potential ethical dilemmas and seeks guidance or takes action to prevent them.', 'Acknowledges mistakes openly and focuses on finding solutions rather than assigning blame.', 'Takes accountability for their actions and decisions, even when it is uncomfortable.', 'Gently reminds colleagues when minor violations occur.', 'Escalates ethical risks to supervisors in a timely manner.', 'Discloses conflicts of interest openly and transparently.']}, '3': {g: 'Serves as a trusted and respected figure who influences others to act in accordance with YPI\'s core values and universal ethical norms.', ex: ['Serves as a role model frequently consulted for guidance in ambiguous or ethically challenging situations.', 'Inspires ethical behavior not only within the organization but also in the broader community through everyday conduct.', 'Takes a principled stand for what is right, even in the face of conflict or significant opposition.', 'Protects the interests of program beneficiaries, ethically and without compromise.', 'Safeguards the organization\'s public reputation and the trust of stakeholders.', 'Maintains integrity under pressure and in the face of ethical dilemmas.', 'Does not leverage organizational relationships with beneficiaries for personal benefit.', 'Maintains independence and objectivity in decision-making.', 'Integrates ethical values into organizational policy and workplace culture.']}}},
+  'B.2.12': {name: 'Critical Thinking', def: 'An intellectual discipline for distinguishing between assumptions and facts, ensuring that every intervention has real and lasting impact. Critical thinking enables staff to constructively challenge the status quo so that development resources — funding, time, and effort — are not wasted on ineffective programs.', hasNeg: false, levels: {'0': {g: 'Accepts all information at face value without questioning its validity, accuracy, or implications.', ex: ['Fails to question doubtful information, leading to project failure and reputational risk for YPI.', 'Accepts data and claims from others without any form of verification.']}, '1': {g: 'Demonstrates caution in thinking; analyzes information and stays focused on relevant, contextually appropriate data.', ex: ['Conducts cross-checks to verify the accuracy of information and data received.', 'Questions the validity of information in order to build a clearer and more complete picture.', 'Verifies information or data before acting on it. Can constructively contribute to analytical design and thinking', 'Considers multiple evidence-based perspectives when forming conclusions.']}, '2': {g: 'Consistently evaluates information and data to develop a more nuanced and contextual understanding of the situation.', ex: ['Identifies inconsistencies, discrepancies, or gaps in data or work instructions.', 'Identifies multiple potential root causes (hypotheses) and designs strategies to test each one.', 'Tests the assumptions underlying plans or decisions.', 'Constructs logical, evidence-based arguments.', 'Integrates field data with evaluation reports and external literature.', 'Considers multiple stakeholder interests when forming judgments.']}, '3': {g: 'Effectively navigates high ambiguity in complex, multi-variable situations — formulating organizational direction even where clear data or solutions do not yet exist.', ex: ['Creates innovative analytical models, frameworks, or procedures to help the organization systematically process information and make sound strategic decisions.', 'Uses prior analyses, learning processes, and lessons learned to improve decision quality over time.', 'Provides risk-benefit analysis of decisions and actions across short-, medium-, and long-term time horizons.', 'Promotes a culture of data use and structured reflection in organizational decision-making.']}}},
+  'B.2.13': {name: 'Analytical Thinking', def: 'The ability to break down complex social phenomena or development challenges into smaller, measurable components in order to understand the underlying cause-and-effect relationships.', hasNeg: false, levels: {'0': {g: 'Has difficulty breaking down even simple problems into their component parts.', ex: ['Cannot identify the key factors contributing to a basic operational challenge.']}, '1': {g: 'Breaks down problems or situations in a straightforward manner.', ex: ['Uses basic reasoning and personal experience to identify simple cause-and-effect relationships (A causes B), and breaks a problem into a list of tasks or steps needed for resolution.', 'Can identify what needs to be done when given a task or responsibility. At this level, tasks are not yet prioritized; work is typically simple and follows established patterns.']}, '2': {g: 'Solves problems by identifying chained cause-and-effect relationships and applying established knowledge and frameworks.', ex: ['Breaks a problem into smaller, clearer components and identifies multi-step causal chains (A causes B, which causes C).', 'Can make clear recommendations "this issue of A is leading to B, which could be addressed by C"', 'Conducts analysis based on prior knowledge and experience and/or applies recognized frameworks and formulas to resolve the problem.']}, '3': {g: 'Analyzes complex, chained relationships using multiple analytical techniques — including in high-risk, high-stakes situations.', ex: ['Demonstrates the ability to translate theoretical frameworks into scholarly or accessible public writing, contributing to knowledge generation on YPI program implementation.', 'Breaks down complex problems using multiple analytical approaches — performance analysis, external factor analysis (economic, regulatory, etc.). Analysis accounts for high risk of failure while also recognizing the potential for significant organizational impact.', 'Uses analysis across multiple available datasets — not limited to a single program or data source — to produce decisions that improve overall program effectiveness.']}}},
+  'B.2.14': {name: 'Reflective Thinking', def: 'A deliberate thinking practice in which individuals or teams pause to examine past experiences, actions, and decisions — in order to gain deep understanding that goes beyond technical reports and data alone.', hasNeg: false, levels: {'0': {g: 'Carries out work activities without examining past decisions, challenges, or behaviors as material for learning.', ex: ['Is unaware of changes in team performance results or shifting data trends.', 'Does not engage in structured or informal reflection following key activities.']}, '1': {g: 'Applies surface-level reflection — can report on what happened and identify feelings or outcomes, even without deep analysis.', ex: ['Identifies their own reactions or feelings during an event but does not analyze why those reactions occurred.', 'Recalls and describes an experience, focusing on "what happened" and "what I did."', 'Reflects on supervisor feedback and makes basic adjustments.', 'Fulfills evaluation obligations as a matter of process compliance.']}, '2': {g: 'Actively connects new experiences to existing knowledge; evaluates alternatives; uses reasoning to explain successes and failures.', ex: ['Questions assumptions about processes, challenges current approaches, and considers perspectives from colleagues or program participants.', 'Analyzes actions against standards, principles, or intended outcomes to identify causes of success or areas for improvement.', 'Identifies contributing factors to program success and failure.', 'Documents learning explicitly for use in subsequent activities.', 'Uses insights from reflection to improve plans and approaches.']}, '3': {g: 'Demonstrates deep, critical self-evaluation that leads to new knowledge and transformed perspectives — applicable across diverse contexts.', ex: ['Critically evaluates underlying organizational values, beliefs, and practices to understand how they shape outcomes.', 'Synthesizes insights from theory, literature, and diverse stakeholder perspectives to develop new conceptual understanding or redesign organizational processes.', 'Serves as a role model and coach for reflective practice — fostering a culture of continuous learning and honest self-assessment.', 'Reflects on program approaches in light of emerging research or self-initiated inquiry, to prevent future conflicts or operational bottlenecks.', 'Uses reflection to improve program strategy, not just execution.', 'Reframes "failure" as a shared learning opportunity that can benefit other teams, divisions, or regions.', 'Is seen as a leader in the community-led conservation speace, beyond YPI, for rooting strategy in reflections, both wins and failures']}}},
+  'B.2.15': {name: 'Detail Orientation', def: 'The ability to focus attention on the small, specific elements of a task or project — ensuring accuracy and precision across all aspects of the work.', hasNeg: false, levels: {'0': {g: 'Shows carelessness with data and information related to tasks and responsibilities, increasing the likelihood of errors and organizational harm.', ex: ['Frequently makes mistakes in data-related tasks, daily operations, or routine outputs — demonstrates insufficient attention to detail.']}, '1': {g: 'Able to focus on accuracy in direct tasks and applies basic quality-checking procedures.', ex: ['Routinely reviews their own work — data entry, calculations, spelling — to catch basic errors before submission.', 'Saves and organizes documents, files, and data systematically for easy access and verification.', 'Completes task sequences without overlooking minor steps outlined in relevant SOPs.', 'Carefully checks each element of routine work to ensure outputs meet expected standards.']}, '2': {g: 'Identifies discrepancies in more complex information and develops methods to maintain quality.', ex: ['Understands how small errors or inaccuracies can have significant downstream effects on processes, decisions, or outcomes.', 'Reviews work multiple times before submission to minimize errors.', 'Recognizes recurring errors and takes deliberate steps to avoid repeating them.', 'Identifies potential error patterns and applies preventive measures proactively.']}, '3': {g: 'Manages accuracy across large-scale, complex information; designs quality control systems; and serves as the organization\'s highest-level quality assurance guardian.', ex: ['Works accurately with large volumes of complex, interconnected data and documents — maintaining coherence across all of them.', 'Sets and communicates high standards of accuracy and detail for the team, and holds team members accountable to those standards through coaching.', 'Proposes practical work-process improvements to increase accuracy in reporting and operations.', 'Maintains quality of output independently, without requiring intensive supervision.']}}},
+  'B.2.16': {name: 'Digital Literacy', def: 'The strategic ability to adopt, integrate, and optimize digital technology to accelerate social impact and increase operational efficiency.', hasNeg: false, levels: {'0': {g: 'Has difficulty adapting to new technology and is reluctant to adopt it, even when relevant to work needs.', ex: ['Tends to be indifferent and unwilling to use technology, often citing complexity as a barrier.', 'Does not seek out opportunities to apply technology to improve their work.']}, '1': {g: 'Demonstrates willingness to learn and explore new technology within their scope of work.', ex: ['Can navigate and operate various software programs and digital devices to support their work.', 'Demonstrates solid command of technology and tools relevant to their field.', 'Uses technology to improve the efficiency of their own work.']}, '2': {g: 'Demonstrates deep understanding of complex technology and its application within their work domain.', ex: ['Actively seeks opportunities to leverage new technology for greater impact or efficiency, including new training and other aspects', 'Demonstrates proven expertise in using specialized software and tools in their field.', 'Provides guidance and technical support to others in using technology effectively.', 'Develops tools, methods, or workflows using technology that improve productivity for themselves and their team.']}, '3': {g: 'Functions as a recognized expert and leader in the organizational use of technology.', ex: ['Drives strategic initiatives to adopt and integrate advanced technology across the organization.', 'Develops and implements a technology tools aligned with organizational objectives.', 'Actively contributes to the development and advancement of technology practices within their area of responsibility', 'Promotes and supports the implementation of technology at every level of the organization.']}}},
+  'B.2.17': {name: 'Cultural Sensitivity', def: 'Awareness, understanding, and respect for cultural differences and similarities among people — without assigning positive or negative value judgments to any culture (i.e., no culture is inherently "better" or "worse" than another).', hasNeg: false, levels: {'0': {g: 'Shows indifference to the cultural backgrounds of others and does not factor cultural context into their behavior.', ex: ['Ignores cultural norms or community sensitivities when interacting with stakeholders.', 'Makes assumptions or generalizations about people based on cultural background.']}, '1': {g: 'Demonstrates basic respect and acknowledgment of cultural differences; focuses on avoiding conflict by following clear behavioral guidelines.', ex: ['Recognizes and respects fundamental cultural differences in customs, language, and etiquette.', 'Monitors their own words and actions to avoid comments or jokes that could offend or rely on cultural stereotypes.', 'Seeks clarification when they do not understand a behavior or communication style, rather than making assumptions.', 'Adjusts program schedules to align with local cultural calendars.', 'Takes local power dynamics and community norms into account when planning activities.']}, '2': {g: 'Demonstrates willingness to learn about diverse cultures; adapts their own behavior accordingly; and recognizes how cultural dynamics affect work outcomes.', ex: ['Actively seeks knowledge about the cultural norms, values, and historical contexts of the communities they work with.', 'Recognizes and accounts for cultural factors — decision-making styles, views on hierarchy, attitudes toward time — when planning and executing tasks.', 'Anticipates potential cultural tensions or miscommunications and takes steps to prevent them.']}, '3': {g: 'Champions diversity; addresses systemic barriers; and leverages cultural differences to produce more effective and equitable outcomes.', ex: ['Draws on diverse cultural perspectives and insights to generate creative ideas, solve complex problems, or develop more globally relevant strategies.', 'Models cultural humility by openly discussing their own biases and actively working to deepen cross-cultural understanding.', 'Builds effective alliances among diverse cultural groups within the organization, fostering a genuine sense of belonging for all.', 'Designs program approaches that are tailored to local cultural context, increasing community ownership and program effectiveness.']}}},
+  'B.2.18': {name: 'Team Development', def: 'The desire to promote the learning and capability development of others — to meet current and future skill requirements, for the individual and for the group. This competency reflects a genuine intent to develop others\' capabilities, not merely to achieve one\'s own job objectives.', hasNeg: false, levels: {'0': {g: 'Develops others only when it serves their own personal goals or performance targets.', ex: ['Invests in a team member\'s development only when it directly benefits their own KPIs.', 'Does not create development opportunities unless organizationally mandated.']}, '1': {g: 'Holds genuine positive expectations of others\' ability and potential.', ex: ['Gives positive and encouraging feedback about team members\' capabilities and growth potential.', 'Operates from the belief that everyone has the willingness and capacity to learn.', 'Assigns simple, appropriately challenging tasks to team members as part of their development.']}, '2': {g: 'Provides specific, developmental feedback to team members focused on growth.', ex: ['Encourages and supports team members who have recently experienced failure, rather than penalizing them.', 'Provides both positive and developmental feedback focused on observable behavior — not on the person.', 'Sets positive expectations for competency and capability development going forward.', 'Can provide coaching insights when appropriate to enhance feedback or build self-development with team members']}, '3': {g: 'Provides meaningful learning opportunities through challenging assignments and structured development planning.', ex: ['Assesses individual competencies, assigns stretch tasks, and delegates authority and responsibility — including the opportunity to make and learn from mistakes in non-critical situations.', 'Use the competency framework and other HR tools to manage their own team', 'Identifies and designs specific development programs in collaboration with the HR team.', 'The primary motivation is genuinely developing others\' capabilities — not merely fulfilling a managerial obligation.']}}},
+  'B.2.19': {name: 'Openness', def: 'Receptiveness to new ideas, experiences, and information; being transparent and accessible in one\'s interactions and activities. This implies an absence of defensiveness, prejudgment, or concealment.', hasNeg: false, levels: {'0': {g: 'Demonstrates a closed, defensive attitude; unwilling to receive input; suspicious toward colleagues and stakeholders.', ex: ['Rejects or dismisses new ideas without genuine consideration.', 'Withholds relevant information from colleagues.']}, '1': {g: 'Demonstrates a basic willingness to listen and does not immediately dismiss others\' ideas or proposed changes.', ex: ['Listens actively to new suggestions, differing opinions, or constructive criticism without becoming defensive.', 'Seeks clarification on unfamiliar concepts or asks to understand the reasoning behind new approaches.']}, '2': {g: 'Provides and receives feedback to improve processes; able to update ideas or positions based on new evidence or compelling arguments, without a hidden agenda.', ex: ['Willing to try new techniques or adapt their own working methods when the situation calls for a different approach.', 'Is straightforward in interactions — no hidden intentions that could damage working relationships.', 'Manages disagreements calmly and without taking emotional sides.']}, '3': {g: 'Consistently models open-mindedness, advocates for new thinking, and creates an organizational climate where openness is actively valued.', ex: ['Promotes psychological safety — a climate in which staff feel comfortable expressing unconventional or dissenting views without fear of negative judgment.', 'Views differences of opinion as raw material for creative problem-solving and brainstorming.']}}},
+  'B.2.2': {name: 'Solution-Based Approach', def: 'The ability to identify problems, generate practical solutions, and take initiative to resolve challenges — rather than simply escalating problems or waiting for others to act.', hasNeg: false, levels: {'0': {g: 'Reports problems without proposing solutions; tends to escalate rather than act.', ex: ['Raises issues to supervisors without suggesting any alternatives.', 'Waits for instructions before addressing a recognized problem.']}, '1': {g: 'Identifies problems and proposes basic solutions within their area of work.', ex: ['Proposes an alternative approach when a task is blocked.', 'Suggests a simple fix for a recurring operational issue.']}, '2': {g: 'Systematically diagnoses complex problems and develops well-reasoned solutions.', ex: ['Uses structured approaches to understand the source of a problem, and can facilitate various activities to help teams reach "root causes"  (problem trees, retrospectives, etc)', 'Develops solution options with trade-offs clearly articulated.', 'Tests solutions at a small scale before recommending broader rollout.']}, '3': {g: 'Drives system-level problem-solving and creates organizational processes for continuous learning and innovation.', ex: ['Designs, leads, and scales problem-solving frameworks and protocols for teams to use consistently.', 'Leads post-implementation reviews and translates findings into institutional improvements (e.g. post-mortem, pre-mortem, and other tools)', 'Creates space and resources for staff to experiment and learn constructively from failure.']}}},
+  'B.2.20': {name: 'Compassion', def: 'Genuinely caring for others — attending to their work and non-work challenges; being available and ready to help; sympathizing with those facing difficulty; demonstrating real empathy for others\' joys and sorrows.', hasNeg: false, levels: {'0': {g: 'Demonstrates a lack of awareness of others\' emotions or needs.', ex: ['Does not acknowledge or respond to signs of stress or difficulty in colleagues or beneficiaries.']}, '1': {g: 'Demonstrates basic empathy and understanding toward others\' emotional states.', ex: ['Shows genuine care and concern for colleagues and program beneficiaries.', 'Respects the privacy and confidentiality of sensitive personal information.', 'Is willing to offer emotional support or practical help to others experiencing difficulty at work or in their personal lives.', 'Acknowledges and validates others\' perspectives and feelings.']}, '2': {g: 'Demonstrates strong empathy and sustained understanding of others\' emotions and challenges.', ex: ['Is patient and understanding with others, even when they are difficult or frustrating.', 'Consistently looks for ways to make a positive difference in others\' lives.', 'Manages their own emotional responses effectively when navigating difficult situations.', 'Maintains heightened sensitivity to vulnerable situations in field and community contexts.']}, '3': {g: 'Demonstrates exceptional empathy and sensitivity; actively advocates for others\' well-being at the organizational and community level.', ex: ['Serves as a genuine role model for empathic leadership — in how they respond to others\' situations and circumstances.', 'Actively seeks opportunities to make a positive impact on the well-being of individuals, teams, and broader communities.', 'Advocates for the needs and welfare of individuals and communities within organizational decision-making.']}}},
+  'B.2.21': {name: 'Conflict Management', def: 'Approaching conflict as an opportunity; negotiating difficult agreements and resolving disputes fairly; facilitating breakthroughs by integrating diverse viewpoints and finding common ground; resolving differences in ways that are productive and cause minimal disruption.', hasNeg: false, levels: {'0': {g: 'Avoids or ignores conflict rather than engaging constructively.', ex: ['Ignores visible tension between team members without attempting to mediate.', 'Avoids important conversations out of fear of confrontation.']}, '1': {g: 'Engages in basic conflict resolution — active listening and open communication.', ex: ['Can identify the root cause of a conflict and distinguish it from surface-level disagreement.', 'Proposes a practical solution when a conflict arises.', 'Recognizes when a conflict between team members stems from a misunderstanding about roles or responsibilities.', 'Invites parties in conflict to discuss the issue openly and constructively.']}, '2': {g: 'Has strong skills in identifying and analyzing conflict; uses negotiation to develop better solutions.', ex: ['Listens actively to all parties and makes a genuine effort to understand each perspective.', 'Uses effective communication and negotiation strategies to help parties reach agreement.', 'Mediates tension between teams by ensuring each party has uninterrupted time to speak.', 'Uses open-ended questions to uncover root causes and co-develop next steps.']}, '3': {g: 'Develops comprehensive conflict resolution frameworks; models constructive conflict as a tool for organizational learning.', ex: ['Serves as a role model for building and sustaining relationships based on mutual respect and genuine understanding.', 'Leads organizational initiatives that foster a culture of constructive conflict resolution.', 'Designs and delivers internal training on empathic communication and conflict management for line managers.', 'Establishes cross-unit conflict resolution mechanisms — for example, monthly team reflection forums — so that disagreements can be processed into systemic improvements.', 'Delivers direct, developmental feedback to staff without public embarrassment or shaming.']}}},
+  'B.2.22': {name: 'Facilitative Leadership', def: 'A leadership approach, mindset, and style focused primarily on empowering and guiding groups or individuals to find their own solutions, generate their own ideas, and reach their own consensus — enabling the group to achieve its goals without dictating the outcome.', hasNeg: false, levels: {'0': {g: 'Reluctant to involve stakeholders in tasks and responsibilities; imposes their own preferred approach without openness to alternatives.', ex: ['Does not give team members, peers, or partner organizations the opportunity to voice ideas.', 'Consistently imposes their own method as the only valid way forward.']}, '1': {g: 'Listens actively to stakeholders and uses clarifying questions — but does not challenge underlying assumptions.', ex: ['Sets aside personal opinions and avoids taking sides in discussions; maintains neutrality as a process guide.', 'Clearly communicates the process — steps, timelines, and ground rules — at the start of meetings to set shared expectations.', 'Gives all participants equal opportunity to contribute ideas, methods, and perspectives.', 'Ensures that stakeholder voices are heard and represented equitably.']}, '2': {g: 'Transfers ownership of decisions and outcomes to the stakeholder group; guides them toward their own solutions rather than imposing one.', ex: ['Creates psychological safety by actively welcoming dissenting views and intervening promptly against disrespectful or exclusionary behavior.', 'Manages group energy and dynamics — using humor, breaks, or shifting activities to maintain engagement and productive flow.', 'Does not tolerate exclusionary behavior or personal attacks. Gives space to those who have not yet spoken, and does not interrupt when team members are sharing ideas.']}, '3': {g: 'Holds deep conviction in the group\'s capacity to grow; deliberately challenges their thinking to drive deep learning and transformation.', ex: ['Designs dialogue processes to surface underlying assumptions and explore power dynamics that block progress.', 'Demonstrates unshakeable belief in the group\'s potential to reach a breakthrough — even in the face of significant resistance, ambiguity, or conflict.', 'Brings all parties together and creates the conditions for shared decision-making. As one example: "This situation exists because we all care deeply about this mission. I trust that this group has the collective capacity to design better ways of working. I will not close this conversation until we reach a solution that is born from shared thinking and where every stakeholder voice has been heard equitably."']}}},
+  'B.2.3': {name: 'Task Management', def: 'The ability to plan, organize, and execute work tasks in a timely and efficient manner — managing competing priorities and consistently meeting quality standards.', hasNeg: false, levels: {'0': {g: 'Frequently misses deadlines or submits work of poor quality without proactive communication.', ex: ['Tasks are incomplete or submitted late without advance notice to the supervisor.', 'Fails to flag competing priorities or capacity constraints before deadlines pass.']}, '1': {g: 'Manages routine tasks effectively when priorities are clear.', ex: ['Completes assigned tasks on time and to an acceptable standard.', 'Maintains an organized workload and keeps supervisors informed of progress.']}, '2': {g: 'Manages multiple tasks and competing priorities simultaneously, adjusting as circumstances change.', ex: ['Prioritizes competing deadlines and communicates early when issues arise.', 'Uses tracking tools or systems to manage workload and maintain visibility.', 'Delegates minor tasks when workload is high.']}, '3': {g: 'Designs team-level task management systems and builds organizational capacity for high-quality execution.', ex: ['Develops workplan templates and task tracking systems for team use.', 'Coaches team members on prioritization and time management.', 'Reviews team workloads and reallocates tasks to balance capacity across the team.']}}},
+  'B.2.4': {name: 'Financial Acumen', def: 'The ability to understand, analyze, and manage financial data and processes in ways that support sound organizational stewardship, donor compliance, and responsible resource use.', hasNeg: false, levels: {'0': {g: 'Does not understand basic financial processes or frequently makes errors in financial documentation.', ex: ['Submits expense reports with recurring errors or missing documentation.', 'Does not follow procurement and reimbursement procedures.']}, '1': {g: 'Understands basic budgeting and financial reporting within their scope of work.', ex: ['Accurately completes expense reports and budget tracking tools.', 'Follows organizational financial procedures for procurement and reimbursements.']}, '2': {g: 'Monitors financial performance, identifies variances, and flags risks proactively.', ex: ['Reviews budget vs. actuals and flags significant deviations early.', 'Prepares financial reports in accordance with donor requirements.', 'Identifies financial risks and escalates them appropriately.']}, '3': {g: 'Leads financial strategy, systems design, and organizational compliance.', ex: ['Designs and maintains financial management systems and policies.', 'Leads budget forecasting and scenario planning processes.', 'Ensures organizational financial accountability and supports external audits.']}}},
+  'B.2.5': {name: 'Value for Money', def: 'The ability to make resource allocation decisions that maximize program impact relative to cost — ensuring that funds are spent effectively, efficiently, and ethically.', hasNeg: false, levels: {'0': {g: 'Does not consider cost-effectiveness when planning activities or making purchasing decisions.', ex: ['Selects options without comparing costs or considering alternatives.', 'Incurs expenses that cannot be justified in terms of program impact.']}, '1': {g: 'Understands value-for-money principles and applies them in routine expenditures.', ex: ['Compares options before purchasing and selects the most cost-effective choice.', 'Avoids unnecessary spending and documents purchasing decisions.']}, '2': {g: 'Applies value-for-money analysis to program planning and significant budget decisions.', ex: ['Conducts cost-effectiveness analysis when comparing intervention options.', 'Documents the rationale for significant budget decisions clearly.', 'Identifies areas of inefficiency and proposes cost savings without compromising impact.']}, '3': {g: 'Establishes organizational standards for value-for-money analysis and leads accountability across programs.', ex: ['Designs frameworks and standards for cost-effectiveness analysis across programs.', 'Trains staff in value-for-money principles and their application.', 'Reports on resource use and value for money to donors, boards, and senior leadership.']}}},
+  'B.2.6': {name: 'Business & Organizational Acumen', def: 'A comprehensive understanding of the organization\'s operating environment, stakeholder ecosystem, and strategic position — and the ability to make decisions that strengthen long-term organizational health and mission impact.', hasNeg: false, levels: {'0': {g: 'Has limited awareness of the broader organizational or operating context.', ex: ['Cannot describe YPI\'s key programs, partnerships, or strategic priorities.', 'Makes decisions without considering organizational implications.']}, '1': {g: 'Understands the organization\'s programs, partners, and operating environment.', ex: ['Can describe YPI\'s programs, landscapes, and key stakeholder relationships.', 'Understands how their role contributes to organizational operations.']}, '2': {g: 'Uses organizational and contextual knowledge to inform strategic decisions.', ex: ['Analyzes internal and external factors when developing program strategies.', 'Identifies opportunities and risks in the operating environment.', 'Integrates stakeholder interests into organizational planning processes.']}, '3': {g: 'Leads organizational positioning, stewardship, and long-term strategic development.', ex: ['Shapes organizational strategy based on deep understanding of sector trends, policy environment, and stakeholder dynamics.', 'Builds external relationships that enhance YPI\'s long-term influence, credibility, and sustainability.', 'Guides organizational adaptation in response to major institutional or environmental shifts.']}}},
+  'B.2.7': {name: 'Self-Growth', def: 'A sustained commitment to learning and personal development — driven by internal motivation and genuine curiosity — not only in response to performance reviews or organizational requirements.', hasNeg: false, levels: {'0': {g: 'Shows little interest in learning new skills or pursuing professional development.', ex: ['Does not engage with available learning resources or development opportunities.', 'Does not act on feedback received in performance reviews.']}, '1': {g: 'Participates in learning opportunities provided by the organization.', ex: ['Attends organizational trainings and applies learning to their work.', 'Asks for feedback from supervisors and makes efforts to act on it.']}, '2': {g: 'Proactively seeks learning opportunities beyond what the organization formally provides.', ex: ['Identifies skill gaps through self-assessment and takes initiative to address them.', 'Reads relevant literature, attends webinars, or joins professional learning networks.', 'Makes new learning visible in their day-to-day work.']}, '3': {g: 'Champions a learning culture and actively mentors others in their growth.', ex: ['Designs learning opportunities for peers and junior staff.', 'Creates accessible organizational resources — toolkits, guides, training materials — based on accumulated knowledge.', 'Mentors junior staff and develops shared learning tools for the organization (e.g., an M&E toolkit accessible across YPI).']}}},
+  'B.2.8': {name: 'Accountability', def: 'Taking personal ownership of commitments, decisions, and outcomes — including acknowledging mistakes and following through on responsibilities without external pressure.', hasNeg: false, levels: {'0': {g: 'Does not follow through on commitments and avoids responsibility when things go wrong.', ex: ['Misses deliverables without proactive communication or corrective action.', 'Deflects responsibility to others when problems arise.']}, '1': {g: 'Meets commitments reliably and acknowledges shortfalls honestly.', ex: ['Completes assigned deliverables on time and to an acceptable standard.', 'Informs supervisors promptly and proactively when a commitment cannot be met.']}, '2': {g: 'Holds self and others accountable to organizational standards, proactively and without prompting.', ex: ['Sets clear expectations for their own contributions and those of team members.', 'Follows up on commitments — their own and others\' — without needing reminders.', 'Raises accountability issues constructively, focusing on outcomes rather than blame.']}, '3': {g: 'Designs accountability systems and fosters an organizational culture of ownership and follow-through.', ex: ['Develops career path frameworks and performance accountability mechanisms.', 'Takes personal ownership of cross-functional challenges, not just their own portfolio.', 'Uses accountability as a tool for organizational learning and continuous improvement.']}}},
+  'B.2.9': {name: 'Proactivity', def: 'Taking initiative ahead of need to identify and address challenges, opportunities, or risks — rather than waiting to be directed or reacting after the fact.', hasNeg: false, levels: {'0': {g: 'Waits to be told what to do; does not anticipate needs, problems, or opportunities.', ex: ['Takes no action on a known issue until instructed by a supervisor.', 'Does not prepare for predictable events or tasks without a direct reminder.']}, '1': {g: 'Takes initiative within their assigned responsibilities.', ex: ['Identifies a potential problem and brings it to a supervisor\'s attention before it becomes critical.', 'Prepares for meetings or assignments without being prompted.']}, '2': {g: 'Anticipates organizational or team needs and takes constructive action without being asked.', ex: ['Initiates conversations about emerging risks or opportunities without waiting for direction.', 'Develops tools or resources in anticipation of team needs.']}, '3': {g: 'Leads proactive planning at the organizational level and builds systems for early detection and response.', ex: ['Develops long-term, detailed workplans that anticipate political, environmental, and operational trends.', 'Identifies resource and partnership opportunities and mobilizes them proactively.', 'Designs organizational systems for early warning and adaptive response.']}}},
+};
+
+const CORE_MINS = {
+  'B.1.1': {junior: 1, officer: 2, senior: 3, director: 3},
+  'B.1.2': {junior: 1, officer: 2, senior: 2, director: 3},
+  'B.1.3': {junior: 0, officer: 1, senior: 2, director: 3},
+  'B.1.4': {junior: 0, officer: 1, senior: 2, director: 3},
+  'B.1.5': {junior: 1, officer: 2, senior: 3, director: 3},
+  'B.1.6': {junior: 0, officer: 1, senior: 2, director: 3},
+};
+
+const AREA_COMPS = {
+  'program': {label: 'Program', comps: {
+    'B.2.2': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.13': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.12': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.17': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.14': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.16': {junior: 0, officer: 1, senior: 2, director: 3},
+    'B.2.5': {junior: 0, officer: 1, senior: 2, director: 3},
+    'B.2.9': {junior: 1, officer: 2, senior: 3, director: 3},
+    'B.2.18': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.21': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.22': {junior: null, officer: null, senior: 3, director: 3},
+  }},
+  'technical': {label: 'Technical', comps: {
+    'B.2.13': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.12': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.15': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.2': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.8': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.14': {junior: 0, officer: 2, senior: 2, director: 3},
+    'B.2.16': {junior: 0, officer: 1, senior: 2, director: 3},
+    'B.2.7': {junior: 0, officer: 1, senior: 2, director: 3},
+    'B.2.21': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.22': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.1': {junior: null, officer: null, senior: 2, director: 3},
+  }},
+  'development': {label: 'Development', comps: {
+    'B.2.6': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.5': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.4': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.1': {junior: 0, officer: 1, senior: 2, director: 3},
+    'B.2.8': {junior: 1, officer: 2, senior: 3, director: 3},
+    'B.2.9': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.16': {junior: 0, officer: 1, senior: 2, director: 3},
+    'B.2.18': {junior: null, officer: null, senior: 2, director: 3},
+    'B.2.21': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.22': {junior: null, officer: null, senior: 3, director: 3},
+  }},
+  'comms': {label: 'Communications', comps: {
+    'B.2.10': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.17': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.19': {junior: 0, officer: 1, senior: 2, director: 3},
+    'B.2.9': {junior: 1, officer: 2, senior: 3, director: 3},
+    'B.2.8': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.16': {junior: 1, officer: 2, senior: 3, director: 3},
+    'B.2.1': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.18': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.21': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.22': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.14': {junior: null, officer: null, senior: 2, director: 3},
+  }},
+  'ops': {label: 'Operations', comps: {
+    'B.2.3': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.4': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.15': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.5': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.8': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.16': {junior: 0, officer: 1, senior: 2, director: 3},
+    'B.2.18': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.21': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.22': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.14': {junior: null, officer: null, senior: 2, director: 3},
+    'B.2.1': {junior: null, officer: null, senior: 2, director: 3},
+  }},
+};
+
+const LEVEL_LABELS = {"-1": "Below Expectations", "0": "Developing", "1": "Foundational", "2": "Proficient", "3": "Advanced"};
+const LEVEL_NAMES = {junior: "Junior Officer", officer: "Officer", senior: "Senior", director: "Director"};
+const LEVEL_ORDER = ["junior", "officer", "senior", "director"];
+const STORAGE_KEY = "ypi_competency_nav";
+
+// ═════ STATE ═════
+let selfScores = {};
+let supScores = {};
+let assessMode = false;
+let managerMode = false;
+let showNextLevel = false;
+let allExpanded = false;
+let searchQuery = "";
+let snapshots = [];
+
+// ═════ PERSISTENCE ═════
+function saveState() {
+  try {
+    var data = {
+      selfScores: selfScores,
+      supScores: supScores,
+      area: document.getElementById("area").value,
+      level: document.getElementById("level").value,
+      staffName: document.getElementById("staffName").value,
+      assessMode: assessMode,
+      managerMode: managerMode,
+      snapshots: snapshots
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    showSaveStatus();
+  } catch(e) { /* localStorage unavailable */ }
+}
+
+function loadState() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    var data = JSON.parse(raw);
+    if (data.selfScores) selfScores = data.selfScores;
+    if (data.supScores) supScores = data.supScores;
+    if (data.area) document.getElementById("area").value = data.area;
+    if (data.level) document.getElementById("level").value = data.level;
+    if (data.staffName) document.getElementById("staffName").value = data.staffName;
+    if (data.assessMode) assessMode = data.assessMode;
+    if (data.managerMode) managerMode = data.managerMode;
+    if (data.snapshots) snapshots = data.snapshots;
+  } catch(e) { /* ignore */ }
+}
+
+function showSaveStatus() {
+  var el = document.getElementById("saveStatus");
+  if (el) { el.classList.add("show"); setTimeout(function(){ el.classList.remove("show"); }, 1500); }
+}
+
+function saveSnapshot() {
+  var name = prompt("Snapshot name (e.g. 'Pre-training Feb 2026'):");
+  if (!name) return;
+  snapshots.push({
+    name: name,
+    date: new Date().toISOString().slice(0,10),
+    selfScores: JSON.parse(JSON.stringify(selfScores)),
+    supScores: JSON.parse(JSON.stringify(supScores)),
+    area: document.getElementById("area").value,
+    level: document.getElementById("level").value,
+    staffName: document.getElementById("staffName").value
+  });
+  saveState();
+  render();
+}
+
+function loadSnapshot(idx) {
+  var snap = snapshots[idx];
+  if (!snap) return;
+  if (!confirm('Load snapshot "' + snap.name + '"? This will replace your current scores.')) return;
+  selfScores = JSON.parse(JSON.stringify(snap.selfScores));
+  supScores = snap.supScores ? JSON.parse(JSON.stringify(snap.supScores)) : {};
+  if (snap.area) document.getElementById("area").value = snap.area;
+  if (snap.level) document.getElementById("level").value = snap.level;
+  if (snap.staffName) document.getElementById("staffName").value = snap.staffName;
+  saveState();
+  render();
+}
+
+function deleteSnapshot(idx) {
+  if (!confirm('Delete snapshot "' + snapshots[idx].name + '"?')) return;
+  snapshots.splice(idx, 1);
+  saveState();
+  render();
+}
+
+// ═════ CSV EXPORT ═════
+function exportCSV() {
+  var area = document.getElementById("area").value;
+  var level = document.getElementById("level").value;
+  if (!area || !level) { alert("Select a role area and level first."); return; }
+  var staffName = document.getElementById("staffName").value.trim() || "Staff";
+  var items = getAllComps(area, level);
+  var rows = [["Code","Competency","Cluster","Target","Self Score","Supervisor Score","Gap (Self)","Gap (Sup)"]];
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i], c = COMPS[it.code];
+    var myS = selfScores[it.code], supS = supScores[it.code];
+    var target = it.min !== null ? it.min : "N/A";
+    var selfStr = myS !== undefined ? myS : "";
+    var supStr = supS !== undefined ? supS : "";
+    var gapSelf = (myS !== undefined && it.min !== null) ? (myS - it.min) : "";
+    var gapSup = (supS !== undefined && it.min !== null) ? (supS - it.min) : "";
+    rows.push([it.code, '"' + c.name.replace(/"/g,'""') + '"', it.cluster, target, selfStr, supStr, gapSelf, gapSup]);
+  }
+  var csv = rows.map(function(r){ return r.join(","); }).join("\n");
+  var blob = new Blob([csv], {type: "text/csv"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = staffName.replace(/\s+/g,"_") + "_" + AREA_COMPS[area].label + "_" + LEVEL_NAMES[level].replace(/\s+/g,"_") + "_competencies.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ═════ MANAGER JSON EXPORT / IMPORT ═════
+function exportJSON() {
+  var area = document.getElementById("area").value;
+  var level = document.getElementById("level").value;
+  var staffName = document.getElementById("staffName").value.trim() || "Staff";
+  var data = { staffName: staffName, area: area, level: level, selfScores: selfScores, supScores: supScores, exportDate: new Date().toISOString().slice(0,10) };
+  var blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = staffName.replace(/\s+/g,"_") + "_assessment.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJSON() {
+  var ta = document.getElementById("mgrImportTA");
+  if (!ta || !ta.value.trim()) { alert("Paste JSON data first."); return; }
+  try {
+    var data = JSON.parse(ta.value.trim());
+    if (data.selfScores) selfScores = data.selfScores;
+    if (data.supScores) supScores = data.supScores;
+    if (data.area) document.getElementById("area").value = data.area;
+    if (data.level) document.getElementById("level").value = data.level;
+    if (data.staffName) document.getElementById("staffName").value = data.staffName;
+    ta.value = "";
+    saveState();
+    render();
+    alert("Imported " + (data.staffName || "staff") + "'s assessment data.");
+  } catch(e) { alert("Invalid JSON. Check format and try again."); }
+}
+
+// ═════ HELPERS ═════
+function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function minClass(score) { return score === null ? "min-na" : "min-" + score; }
+function minLabel(score) { return score === null ? "N/A" : score + " \u2014 " + LEVEL_LABELS[String(score)]; }
+function getNextLevel(currentLevel) {
+  const idx = LEVEL_ORDER.indexOf(currentLevel);
+  return idx < LEVEL_ORDER.length - 1 ? LEVEL_ORDER[idx + 1] : null;
+}
+function getAllComps(area, level) {
+  const items = [];
+  for (const [code, mins] of Object.entries(CORE_MINS)) items.push({ code, min: mins[level], cluster: "core" });
+  for (const [code, mins] of Object.entries(AREA_COMPS[area].comps)) items.push({ code, min: mins[level], cluster: "functional" });
+  return items;
+}
+function getGapInfo(code, minScore) {
+  if (minScore === null) return null;
+  const myScore = selfScores[code];
+  if (myScore === undefined) return null;
+  const diff = myScore - minScore;
+  if (diff >= 1) return { label: "Above target", cls: "gap-above", diff };
+  if (diff === 0) return { label: "At target", cls: "gap-at", diff };
+  if (diff === -1) return { label: "1 below target", cls: "gap-below-1", diff };
+  return { label: Math.abs(diff) + " below target", cls: "gap-below-2", diff };
+}
+
+// ═════ RADAR CHART ═════
+function renderRadar(area, level) {
+  var items = getAllComps(area, level).filter(function(i){ return i.min !== null; });
+  var hasScores = items.some(function(i){ return selfScores[i.code] !== undefined; });
+  var hasSupScores = managerMode && items.some(function(i){ return supScores[i.code] !== undefined; });
+  if (!hasScores && !hasSupScores) return "";
+
+  var n = items.length;
+  var cx = 200, cy = 200, maxR = 160, minR = 30;
+  // Scale: 0 maps to minR (inner ring), 3 maps to maxR (outer ring)
+  // This ensures score=0 ("Developing") is still visible, not collapsed to center
+
+  function polarToXY(idx, val) {
+    var angle = (Math.PI * 2 * idx / n) - Math.PI / 2;
+    var r = minR + (val / 3) * (maxR - minR);
+    return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+  }
+
+  // Grid rings — one per score level (0, 1, 2, 3)
+  var gridHTML = "";
+  for (var ring = 0; ring <= 3; ring++) {
+    var pts = [];
+    for (var i = 0; i < n; i++) pts.push(polarToXY(i, ring).join(","));
+    gridHTML += '<polygon points="' + pts.join(" ") + '" fill="none" stroke="' + (ring === 0 ? '#ccc' : '#ddd') + '" stroke-width="' + (ring === 0 ? '0.6' : '0.8') + '"/>';
+    // Ring label
+    var labelPt = polarToXY(0, ring);
+    gridHTML += '<text x="' + (labelPt[0] + 4) + '" y="' + (labelPt[1] - 4) + '" font-size="8" fill="#aaa">' + ring + '</text>';
+  }
+
+  // Axis lines + labels
+  var axisHTML = "";
+  for (var i = 0; i < n; i++) {
+    var p = polarToXY(i, 3);
+    axisHTML += '<line x1="' + cx + '" y1="' + cy + '" x2="' + p[0] + '" y2="' + p[1] + '" stroke="#eee" stroke-width="0.5"/>';
+    var lp = polarToXY(i, 3.45);
+    var anchor = lp[0] < cx - 10 ? "end" : (lp[0] > cx + 10 ? "start" : "middle");
+    var shortName = items[i].code;
+    axisHTML += '<text x="' + lp[0] + '" y="' + lp[1] + '" text-anchor="' + anchor + '" font-size="9" fill="#888" dominant-baseline="central">' + shortName + '</text>';
+  }
+
+  // Target polygon
+  var targetPts = [];
+  for (var i = 0; i < n; i++) targetPts.push(polarToXY(i, items[i].min).join(","));
+  var targetPoly = '<polygon points="' + targetPts.join(" ") + '" fill="rgba(0,75,92,0.08)" stroke="#004B5C" stroke-width="1.5" stroke-dasharray="4,3"/>';
+
+  // Self-score polygon
+  var selfPoly = "";
+  if (hasScores) {
+    var selfPts = [];
+    for (var i = 0; i < n; i++) {
+      var v = selfScores[items[i].code];
+      selfPts.push(polarToXY(i, v !== undefined ? Math.max(0, v) : 0).join(","));
+    }
+    selfPoly = '<polygon points="' + selfPts.join(" ") + '" fill="rgba(255,180,50,0.15)" stroke="#FFB432" stroke-width="2"/>';
+    // Dots for scored items
+    for (var i = 0; i < n; i++) {
+      var v = selfScores[items[i].code];
+      if (v !== undefined) {
+        var dp = polarToXY(i, Math.max(0, v));
+        selfPoly += '<circle cx="' + dp[0] + '" cy="' + dp[1] + '" r="3.5" fill="#FFB432" stroke="#fff" stroke-width="1"/>';
+      }
+    }
+  }
+
+  // Supervisor polygon
+  var supPoly = "";
+  if (hasSupScores) {
+    var supPts = [];
+    for (var i = 0; i < n; i++) {
+      var v = supScores[items[i].code];
+      supPts.push(polarToXY(i, v !== undefined ? Math.max(0, v) : 0).join(","));
+    }
+    supPoly = '<polygon points="' + supPts.join(" ") + '" fill="rgba(115,10,45,0.08)" stroke="#730A2D" stroke-width="1.5"/>';
+    for (var i = 0; i < n; i++) {
+      var v = supScores[items[i].code];
+      if (v !== undefined) {
+        var dp = polarToXY(i, Math.max(0, v));
+        supPoly += '<circle cx="' + dp[0] + '" cy="' + dp[1] + '" r="3" fill="#730A2D" stroke="#fff" stroke-width="1"/>';
+      }
+    }
+  }
+
+  var svg = '<svg viewBox="0 0 400 400" style="max-width:380px;width:100%;margin:0 auto;display:block">' + gridHTML + axisHTML + targetPoly + selfPoly + supPoly + '</svg>';
+
+  var legend = '<div class="radar-legend"><span><span class="dot" style="background:#004B5C;opacity:0.4"></span> Target (dashed)</span><span><span class="dot" style="background:#FFB432"></span> Self-score</span>';
+  if (hasSupScores) legend += '<span><span class="dot" style="background:#730A2D"></span> Supervisor</span>';
+  legend += '</div>';
+
+  return '<div class="radar-wrap"><div class="radar-title">Competency Radar</div>' + svg + legend + '</div>';
+}
+
+// ═════ RENDER CARD ═════
+function renderCard(code, minScore, level) {
+  const c = COMPS[code];
+  if (!c) return "";
+  const levelKeys = Object.keys(c.levels).sort((a,b) => Number(a) - Number(b));
+  const myScore = selfScores[code];
+  const mySup = supScores[code];
+  const gap = getGapInfo(code, minScore);
+  const hasGap = gap && gap.diff < 0;
+  const nextLvl = showNextLevel ? getNextLevel(level) : null;
+
+  let levelsHTML = "";
+  for (const lk of levelKeys) {
+    const lv = c.levels[lk];
+    const isTarget = minScore !== null && String(lk) === String(minScore);
+    const isCurrent = myScore !== undefined && String(lk) === String(myScore);
+    const isSup = managerMode && mySup !== undefined && String(lk) === String(mySup);
+    const numLk = Number(lk); const numMin = minScore !== null ? Number(minScore) : null;
+    let tagHTML = "";
+    if (isCurrent && assessMode) tagHTML += '<span class="level-tag tag-current">Your score</span>';
+    if (isSup && managerMode) tagHTML += '<span class="level-tag tag-supervisor">Supervisor</span>';
+    if (isTarget) tagHTML += '<span class="level-tag tag-target">Target</span>';
+    else if (numMin !== null && numLk > numMin) tagHTML += '<span class="level-tag tag-above">Above target</span>';
+    else if (numMin !== null && numLk < numMin) tagHTML += '<span class="level-tag tag-below">Below target</span>';
+    const shouldExpand = isTarget || (isCurrent && assessMode) || (isSup && managerMode);
+    const collapsed = !shouldExpand ? "collapsed" : "";
+    let extraCls = isTarget ? "target" : "";
+    if (isCurrent && assessMode) extraCls = "current-score";
+    if (isSup && managerMode && !isCurrent) extraCls = "sup-score";
+    const exList = lv.ex.map(e => "<li>" + esc(e) + "</li>").join("");
+    levelsHTML += '<div class="level-section ' + collapsed + ' ' + extraCls + '" onclick="this.classList.toggle(\'collapsed\')"><div class="level-header"><span class="level-badge ' + minClass(Number(lk)) + '">' + lk + '</span><span class="level-title">' + (LEVEL_LABELS[lk] || "Level "+lk) + '</span>' + tagHTML + '</div><div class="level-examples"><div class="guidance">' + esc(lv.g) + '</div>' + (exList ? '<ul>' + exList + '</ul>' : '') + '</div></div>';
+  }
+
+  let scoreRowHTML = "";
+  if (assessMode && minScore !== null) {
+    const possibleScores = levelKeys.map(Number);
+    let btns = possibleScores.map(function(s) {
+      const sel = myScore === s ? "selected" : "";
+      return '<button class="score-btn ' + sel + '" onclick="event.stopPropagation();setScore(\'' + code + '\',' + s + ')">' + s + '</button>';
+    }).join("");
+    btns += '<button class="score-btn clear-btn" onclick="event.stopPropagation();clearScore(\'' + code + '\')">Clear</button>';
+    let gapHTML = "";
+    if (gap) gapHTML = '<span class="gap-indicator ' + gap.cls + '">' + gap.label + '</span>';
+    scoreRowHTML = '<div class="self-score-row" onclick="event.stopPropagation()"><span class="label">My score:</span><div class="score-btns">' + btns + '</div>' + gapHTML + '</div>';
+  }
+
+  // Supervisor score row
+  let supRowHTML = "";
+  if (managerMode && minScore !== null) {
+    const possibleScores = levelKeys.map(Number);
+    let btns = possibleScores.map(function(s) {
+      const sel = mySup === s ? "sup-selected" : "";
+      return '<button class="score-btn sup-btn ' + sel + '" onclick="event.stopPropagation();setSupScore(\'' + code + '\',' + s + ')">' + s + '</button>';
+    }).join("");
+    btns += '<button class="score-btn clear-btn" onclick="event.stopPropagation();clearSupScore(\'' + code + '\')">Clear</button>';
+    let supGapHTML = "";
+    if (mySup !== undefined && minScore !== null) {
+      var sd = mySup - minScore;
+      var sl = sd >= 1 ? "Above target" : sd === 0 ? "At target" : sd === -1 ? "1 below" : Math.abs(sd) + " below";
+      var sc = sd >= 1 ? "gap-above" : sd === 0 ? "gap-at" : sd === -1 ? "gap-below-1" : "gap-below-2";
+      supGapHTML = '<span class="gap-indicator ' + sc + '">' + sl + '</span>';
+    }
+    supRowHTML = '<div class="sup-score-row" onclick="event.stopPropagation()"><span class="label">Supervisor score:</span><div class="score-btns">' + btns + '</div>' + supGapHTML + '</div>';
+  }
+
+  let nextLevelHTML = "";
+  if (nextLvl && minScore !== null) {
+    var nextMin = null;
+    if (CORE_MINS[code]) nextMin = CORE_MINS[code][nextLvl];
+    else { var area = document.getElementById("area").value; var ac = AREA_COMPS[area]?.comps; if (ac && ac[code]) nextMin = ac[code][nextLvl]; }
+    if (nextMin !== null && nextMin !== undefined && nextMin > minScore) {
+      nextLevelHTML = '<div style="font-size:0.78rem;color:#730A2D;margin-top:6px;padding:6px 10px;background:#fdf2f5;border-radius:6px;">For <strong>' + LEVEL_NAMES[nextLvl] + '</strong>: target increases to <strong>' + nextMin + ' \u2014 ' + LEVEL_LABELS[String(nextMin)] + '</strong></div>';
+    }
+  }
+
+  return '<div class="comp-card ' + (hasGap ? 'gap-highlight' : '') + '" onclick="this.classList.toggle(\'open\')"><div class="comp-head"><span class="comp-code">' + code + '</span><span class="comp-name">' + esc(c.name) + '</span><span class="comp-min ' + minClass(minScore) + '">' + minLabel(minScore) + '</span><span class="chevron"><svg viewBox="0 0 18 11" fill="none" stroke="#004B5C" stroke-width="2"><path d="M1 1l8 8 8-8"/></svg></span></div><div class="comp-body" onclick="event.stopPropagation()"><div class="comp-def">' + esc(c.def) + '</div>' + (c.hasNeg ? '<div class="integrity-note">Note: Integrity is the only competency that uses the -1 (Below Expectations) level. A score of -1 indicates behavior that violates PI + YPI\u2019s ethical principles and requires immediate corrective action.</div>' : '') + scoreRowHTML + supRowHTML + nextLevelHTML + levelsHTML + '</div></div>';
+}
+
+// ═════ SCORING ═════
+function setScore(code, score) { selfScores[code] = score; saveState(); render(); }
+function clearScore(code) { delete selfScores[code]; saveState(); render(); }
+function setSupScore(code, score) { supScores[code] = score; saveState(); render(); }
+function clearSupScore(code) { delete supScores[code]; saveState(); render(); }
+function resetAllScores() { selfScores = {}; supScores = {}; saveState(); render(); }
+function toggleAllCards() {
+  allExpanded = !allExpanded;
+  document.querySelectorAll('.comp-card').forEach(function(card) {
+    if (allExpanded) card.classList.add('open');
+    else card.classList.remove('open');
+  });
+}
+function filterComps() {
+  searchQuery = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase().trim() : "";
+  document.querySelectorAll('.comp-card').forEach(function(card) {
+    var name = card.querySelector('.comp-name');
+    var code = card.querySelector('.comp-code');
+    var text = (name ? name.textContent : '') + ' ' + (code ? code.textContent : '');
+    if (searchQuery && text.toLowerCase().indexOf(searchQuery) === -1) card.classList.add('search-hidden');
+    else card.classList.remove('search-hidden');
+  });
+}
+
+// ═════ DASHBOARD ═════
+function renderDashboard(area, level) {
+  const items = getAllComps(area, level).filter(function(i) { return i.min !== null; });
+  const scored = items.filter(function(i) { return selfScores[i.code] !== undefined; });
+  if (scored.length === 0) return '<div class="dashboard active"><div class="dash-title">Self-Assessment Dashboard</div><div class="dash-hint">Score your competencies below to see your gap analysis here.</div></div>';
+  var met = 0, below1 = 0, below2 = 0, gaps = [];
+  for (var i = 0; i < scored.length; i++) {
+    var diff = selfScores[scored[i].code] - scored[i].min;
+    if (diff >= 0) met++;
+    else if (diff === -1) { below1++; gaps.push({ code: scored[i].code, gap: Math.abs(diff) }); }
+    else { below2++; gaps.push({ code: scored[i].code, gap: Math.abs(diff) }); }
+  }
+  var unscored = items.length - scored.length;
+  var pct = Math.round((met / items.length) * 100);
+  gaps.sort(function(a,b) { return b.gap - a.gap; });
+  var prioritiesHTML = "";
+  if (gaps.length > 0) {
+    var topGaps = gaps.slice(0, 5);
+    var pItems = topGaps.map(function(g) { var c = COMPS[g.code]; return '<div class="priority-item"><span class="priority-gap ' + (g.gap >= 2 ? 'gap-2' : '') + '">' + g.gap + ' level' + (g.gap>1?'s':'') + ' below</span> <span>' + g.code + ' ' + esc(c.name) + '</span></div>'; }).join("");
+    prioritiesHTML = '<div class="dash-priorities"><h4>Top Development Priorities</h4>' + pItems + '</div>';
+  }
+  return '<div class="dashboard active"><div class="dash-title">Self-Assessment Dashboard</div><div class="dash-stats"><div class="dash-stat stat-met"><div class="num">' + met + '</div><div class="lbl">At/Above Target</div></div><div class="dash-stat stat-below"><div class="num">' + below1 + '</div><div class="lbl">1 Below</div></div><div class="dash-stat stat-far"><div class="num">' + below2 + '</div><div class="lbl">2+ Below</div></div><div class="dash-stat stat-unscored"><div class="num">' + unscored + '</div><div class="lbl">Not Scored</div></div></div><div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div><div class="dash-hint">' + met + ' of ' + items.length + ' assessed competencies at or above target (' + pct + '%)</div>' + prioritiesHTML + '</div>';
+}
+
+// ═════ PERSISTENCE BAR ═════
+function renderPersistBar() {
+  var snapHTML = "";
+  if (snapshots.length > 0) {
+    snapHTML = '<div class="snapshot-list">';
+    for (var i = 0; i < snapshots.length; i++) {
+      snapHTML += '<div class="snapshot-item"><span class="snap-name">' + esc(snapshots[i].name) + '</span><span class="snap-date">' + snapshots[i].date + '</span><button class="snap-btn" onclick="loadSnapshot(' + i + ')">Load</button><button class="snap-btn snap-del" onclick="deleteSnapshot(' + i + ')">Delete</button></div>';
+    }
+    snapHTML += '</div>';
+  }
+  return '<div class="persist-bar"><div class="persist-title">Saved Data <span id="saveStatus" class="save-status">Auto-saved</span></div><div class="persist-row"><button class="btn btn-secondary" onclick="saveSnapshot()">Save Snapshot</button><button class="btn btn-secondary" onclick="exportCSV()">Export CSV</button><button class="btn btn-secondary" onclick="exportJSON()">Export JSON</button></div>' + snapHTML + '</div>';
+}
+
+// ═════ MANAGER PANEL ═════
+function renderManagerPanel() {
+  if (!managerMode) return "";
+  return '<div class="manager-panel"><div class="mgr-title">Manager View</div><div class="mgr-row"><button class="btn btn-secondary" onclick="document.getElementById(\'mgrImportWrap\').style.display=document.getElementById(\'mgrImportWrap\').style.display===\'block\'?\'none\':\'block\'">Import Staff JSON</button></div><div id="mgrImportWrap" class="mgr-import-area" style="display:none"><textarea id="mgrImportTA" placeholder="Paste a staff member\'s exported JSON here..."></textarea><button class="btn btn-primary" onclick="importJSON()" style="margin-top:6px">Load Data</button></div></div>';
+}
+
+// ═════ PRINT PLAN ═════
+function generatePlan() {
+  var area = document.getElementById("area").value;
+  var level = document.getElementById("level").value;
+  if (!area || !level) return;
+  var areaData = AREA_COMPS[area];
+  var items = getAllComps(area, level).filter(function(i) { return i.min !== null; });
+  var nextLvl = getNextLevel(level);
+  var rows = "", gaps = [];
+  var hasSup = managerMode && Object.keys(supScores).length > 0;
+  var supHeader = hasSup ? '<th>Sup. Score</th><th>Sup. Gap</th>' : '';
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i], c = COMPS[item.code];
+    var myScore = selfScores[item.code];
+    var scoreStr = myScore !== undefined ? String(myScore) : "\u2014";
+    var diff = myScore !== undefined ? myScore - item.min : null;
+    var gapStr = "\u2014", gapCls = "";
+    if (diff !== null) {
+      if (diff >= 0) { gapStr = diff === 0 ? "At target" : "+" + diff; gapCls = diff === 0 ? "gap-zero" : "gap-pos"; }
+      else { gapStr = String(diff); gapCls = "gap-neg"; gaps.push({ code: item.code, name: c.name, gap: Math.abs(diff), min: item.min }); }
+    }
+    var supCells = "";
+    if (hasSup) {
+      var ss = supScores[item.code];
+      var ssStr = ss !== undefined ? String(ss) : "\u2014";
+      var sd = ss !== undefined ? ss - item.min : null;
+      var sgStr = "\u2014", sgCls = "";
+      if (sd !== null) {
+        if (sd >= 0) { sgStr = sd === 0 ? "At target" : "+" + sd; sgCls = sd === 0 ? "gap-zero" : "gap-pos"; }
+        else { sgStr = String(sd); sgCls = "gap-neg"; }
+      }
+      supCells = '<td>' + ssStr + '</td><td class="gap-cell ' + sgCls + '">' + sgStr + '</td>';
+    }
+    rows += '<tr><td>' + item.code + '</td><td>' + esc(c.name) + '</td><td>' + item.min + '</td><td>' + scoreStr + '</td><td class="gap-cell ' + gapCls + '">' + gapStr + '</td>' + supCells + '</tr>';
+  }
+  gaps.sort(function(a,b) { return b.gap - a.gap; });
+  var devPlan = "";
+  if (gaps.length > 0) {
+    var planRows = gaps.slice(0, 5).map(function(g, i) {
+      var c = COMPS[g.code];
+      var nextScore = selfScores[g.code] + 1;
+      var targetLvl = c.levels[String(nextScore)];
+      var nextStep = targetLvl ? esc(targetLvl.g) : "See competency details";
+      return '<tr><td>' + (i+1) + '</td><td>' + g.code + ' ' + esc(g.name) + '</td><td>' + g.gap + ' level' + (g.gap>1?'s':'') + '</td><td style="font-size:0.78rem">' + nextStep + '</td></tr>';
+    }).join("");
+    devPlan = '<div class="print-section"><h3>Development Plan \u2014 Top Priorities</h3><table class="print-table"><thead><tr><th>#</th><th>Competency</th><th>Gap</th><th>Next Step</th></tr></thead><tbody>' + planRows + '</tbody></table></div>';
+  }
+  var nextLevelSection = "";
+  if (nextLvl) {
+    var increases = [];
+    for (var j = 0; j < items.length; j++) {
+      var it = items[j]; var nMin = null;
+      if (CORE_MINS[it.code]) nMin = CORE_MINS[it.code][nextLvl];
+      else if (areaData.comps[it.code]) nMin = areaData.comps[it.code][nextLvl];
+      if (nMin !== null && nMin !== undefined && nMin > it.min) increases.push({ code: it.code, name: COMPS[it.code].name, from: it.min, to: nMin });
+    }
+    if (increases.length > 0) {
+      var incRows = increases.map(function(inc) { return '<tr><td>' + inc.code + ' ' + esc(inc.name) + '</td><td>' + inc.from + ' \u2192 ' + inc.to + '</td></tr>'; }).join("");
+      nextLevelSection = '<div class="print-section"><h3>Path to ' + LEVEL_NAMES[nextLvl] + '</h3><p style="font-size:0.85rem;margin-bottom:10px;color:#555">' + increases.length + ' competencies increase in target score for ' + LEVEL_NAMES[nextLvl] + ' level.</p><table class="print-table"><thead><tr><th>Competency</th><th>Target Change</th></tr></thead><tbody>' + incRows + '</tbody></table></div>';
+    }
+  }
+  var today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  var staffName = document.getElementById("staffName") ? document.getElementById("staffName").value.trim() : "";
+  var nameDisplay = staffName ? '<div style="font-size:1.05rem;font-weight:600;color:#1a1a1a;margin-bottom:2px">' + esc(staffName) + '</div>' : '';
+  var scoredCount = items.filter(function(it) { return selfScores[it.code] !== undefined; }).length;
+  document.getElementById("printContent").innerHTML = '<button class="print-close" onclick="closePlan()">\u00d7</button><h2>PI + YPI Development Plan</h2>' + nameDisplay + '<div class="subtitle">' + areaData.label + ' \u2014 ' + LEVEL_NAMES[level] + ' &nbsp;|&nbsp; Generated ' + today + '</div><div class="print-section"><h3>Competency Scores (' + scoredCount + ' of ' + items.length + ' scored)</h3><table class="print-table"><thead><tr><th>Code</th><th>Competency</th><th>Target</th><th>My Score</th><th>Gap</th>' + supHeader + '</tr></thead><tbody>' + rows + '</tbody></table></div>' + devPlan + nextLevelSection + '<div class="print-actions"><button class="btn btn-primary" onclick="window.print()">Print / Save as PDF</button><button class="btn btn-secondary" onclick="closePlan()">Close</button></div>';
+  document.getElementById("printOverlay").classList.add("active");
+}
+function closePlan() { document.getElementById("printOverlay").classList.remove("active"); }
+
+// ═════ MAIN RENDER ═════
+function render() {
+  var area = document.getElementById("area").value;
+  var level = document.getElementById("level").value;
+  var app = document.getElementById("app");
+  if (!area || !level) { app.innerHTML = '<div class="empty-state"><p>Select your role area and level above to see your competency profile.</p></div>'; return; }
+  var areaData = AREA_COMPS[area];
+  var funcComps = Object.entries(areaData.comps).filter(function(e) { return e[1][level] !== null; });
+  var funcNA = Object.entries(areaData.comps).filter(function(e) { return e[1][level] === null; });
+  var totalCore = Object.keys(CORE_MINS).length;
+  var totalFunc = funcComps.length;
+  var nextLvl = getNextLevel(level);
+
+  var actionHTML = '<div class="action-row"><button class="btn ' + (assessMode ? 'btn-primary active' : 'btn-secondary') + '" onclick="assessMode=!assessMode;saveState();render()">' + (assessMode ? 'Exit Self-Assessment' : 'Start Self-Assessment') + '</button>';
+  actionHTML += '<button class="btn ' + (managerMode ? 'btn-primary active' : 'btn-secondary') + '" style="' + (managerMode ? 'background:#730A2D' : '') + '" onclick="managerMode=!managerMode;saveState();render()">' + (managerMode ? 'Exit Manager View' : 'Manager View') + '</button>';
+  if (nextLvl) actionHTML += '<button class="btn ' + (showNextLevel ? 'btn-primary active' : 'btn-secondary') + '" onclick="showNextLevel=!showNextLevel;render()">' + (showNextLevel ? 'Hide Next Level' : 'Compare: ' + LEVEL_NAMES[nextLvl]) + '</button>';
+  if ((assessMode || managerMode) && (Object.keys(selfScores).length > 0 || Object.keys(supScores).length > 0)) {
+    actionHTML += '<button class="btn btn-accent" onclick="generatePlan()">View Development Plan</button>';
+    actionHTML += '<button class="btn btn-secondary" onclick="if(confirm(\'Reset all scores? This cannot be undone.\')){resetAllScores()}" style="color:#a82828;border-color:#a82828">Reset All Scores</button>';
+  }
+  actionHTML += '<button class="btn btn-secondary" onclick="toggleAllCards()" style="margin-left:auto">' + (allExpanded ? 'Collapse All' : 'Expand All') + '</button>';
+  actionHTML += '</div>';
+
+  var nextInfoHTML = "";
+  if (showNextLevel && nextLvl) nextInfoHTML = '<div class="next-level-info" style="display:block">Showing what changes if you move to <strong>' + LEVEL_NAMES[nextLvl] + '</strong>. Look for the burgundy notes inside each competency card.</div>';
+
+  var dashHTML = assessMode ? renderDashboard(area, level) : "";
+  var radarHTML = (assessMode || managerMode) ? renderRadar(area, level) : "";
+  var persistHTML = (assessMode || managerMode) ? renderPersistBar() : "";
+  var mgrHTML = renderManagerPanel();
+
+  var searchHTML = '<div class="search-box"><span class="search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span><input type="text" id="searchInput" class="search-input" placeholder="Search competencies by name or code\u2026" oninput="filterComps()" value="' + esc(searchQuery) + '"></div>';
+
+  var html = '<div class="summary-bar"><span class="badge">' + areaData.label + '</span><span class="badge">' + LEVEL_NAMES[level] + '</span><span class="info">' + totalCore + ' core + ' + totalFunc + ' functional competencies apply to you</span></div>' + actionHTML + dashHTML + radarHTML + mgrHTML + persistHTML + nextInfoHTML + '<details class="rating-ref"><summary>Rating scale reference</summary><div class="scale"><span><strong>0</strong> Developing</span><span><strong>1</strong> Foundational</span><span><strong>2</strong> Proficient</span><span><strong>3</strong> Advanced</span></div></details>' + searchHTML + '<div class="section-label">Core Competencies \u2014 Required of All Staff</div>';
+
+  for (var code in CORE_MINS) html += renderCard(code, CORE_MINS[code][level], level);
+  html += '<div class="section-label">Functional Competencies \u2014 ' + areaData.label + '</div>';
+  for (var i = 0; i < funcComps.length; i++) html += renderCard(funcComps[i][0], funcComps[i][1][level], level);
+  if (funcNA.length > 0) {
+    html += '<div class="section-label" style="opacity:0.5">Not assessed at ' + LEVEL_NAMES[level] + ' level</div>';
+    for (var j = 0; j < funcNA.length; j++) html += renderCard(funcNA[j][0], null, level);
+  }
+  app.innerHTML = html;
+  if (searchQuery) filterComps();
+  if (allExpanded) document.querySelectorAll('.comp-card').forEach(function(c) { c.classList.add('open'); });
+}
+
+// ═════ INIT ═════
+loadState();
+render();
+
+document.getElementById("area").addEventListener("change", function() { allExpanded = false; searchQuery = ""; saveState(); render(); });
+document.getElementById("level").addEventListener("change", function() { allExpanded = false; searchQuery = ""; saveState(); render(); });
+document.getElementById("staffName").addEventListener("input", function() { saveState(); });
+</script>
+</body>
+</html>
