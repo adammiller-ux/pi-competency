@@ -236,6 +236,8 @@ select:focus { outline: none; border-color: #004B5C; box-shadow: 0 0 0 3px rgba(
       <option value="development">Development</option>
       <option value="comms">Communications</option>
       <option value="ops">Operations</option>
+      <option value="strategic">Strategy</option>
+      <option value="executive">Executive</option>
     </select>
   </div>
   <div class="control-group">
@@ -370,6 +372,43 @@ const AREA_COMPS = {
     'B.2.22': {junior: null, officer: null, senior: 3, director: 3},
     'B.2.14': {junior: null, officer: null, senior: 2, director: 3},
     'B.2.1': {junior: null, officer: null, senior: 2, director: 3},
+  }},
+  'strategic': {label: 'Strategy', comps: {
+    'B.2.6': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.1': {junior: 0, officer: 1, senior: 2, director: 3},
+    'B.2.4': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.5': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.8': {junior: 1, officer: 2, senior: 3, director: 3},
+    'B.2.9': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.16': {junior: 0, officer: 1, senior: 2, director: 3},
+    'B.2.13': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.12': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.14': {junior: 0, officer: 2, senior: 2, director: 3},
+    'B.2.17': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.2': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.18': {junior: null, officer: null, senior: 2, director: 3},
+    'B.2.21': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.22': {junior: null, officer: null, senior: 3, director: 3},
+  }},
+  'executive': {label: 'Executive', comps: {
+    'B.2.6': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.1': {junior: 0, officer: 1, senior: 2, director: 3},
+    'B.2.4': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.5': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.8': {junior: 1, officer: 2, senior: 3, director: 3},
+    'B.2.9': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.16': {junior: 0, officer: 1, senior: 2, director: 3},
+    'B.2.13': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.12': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.14': {junior: 0, officer: 2, senior: 2, director: 3},
+    'B.2.17': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.21': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.22': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.2': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.10': {junior: 1, officer: 2, senior: 2, director: 3},
+    'B.2.18': {junior: null, officer: null, senior: 3, director: 3},
+    'B.2.19': {junior: 0, officer: 1, senior: 2, director: 3},
+    'B.2.20': {junior: 1, officer: 2, senior: 2, director: 3},
   }},
 };
 
@@ -854,8 +893,27 @@ function generatePlan() {
 }
 function closePlan() { document.getElementById("printOverlay").classList.remove("active"); }
 
+// ═════ LEVEL AVAILABILITY ═════
+// Executive is a Director-only area: hide the other levels when it is selected.
+var EXEC_ONLY_AREAS = ["executive"];
+function syncLevelOptions() {
+  var areaEl = document.getElementById("area");
+  var lvlEl = document.getElementById("level");
+  if (!areaEl || !lvlEl) return;
+  var dirOnly = EXEC_ONLY_AREAS.indexOf(areaEl.value) !== -1;
+  for (var i = 0; i < lvlEl.options.length; i++) {
+    var o = lvlEl.options[i];
+    if (!o.value) continue;
+    var hide = dirOnly && o.value !== "director";
+    o.hidden = hide;
+    o.disabled = hide;
+  }
+  if (dirOnly && lvlEl.value !== "director") lvlEl.value = "director";
+}
+
 // ═════ MAIN RENDER ═════
 function render() {
+  syncLevelOptions();
   var area = document.getElementById("area").value;
   var level = document.getElementById("level").value;
   var app = document.getElementById("app");
@@ -905,7 +963,7 @@ function render() {
 loadState();
 render();
 
-document.getElementById("area").addEventListener("change", function() { allExpanded = false; searchQuery = ""; saveState(); render(); });
+document.getElementById("area").addEventListener("change", function() { allExpanded = false; searchQuery = ""; syncLevelOptions(); saveState(); render(); });
 document.getElementById("level").addEventListener("change", function() { allExpanded = false; searchQuery = ""; saveState(); render(); });
 document.getElementById("staffName").addEventListener("input", function() { saveState(); });
 </script>
